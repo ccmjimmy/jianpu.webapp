@@ -262,6 +262,13 @@ module.exports = function (grunt) {
           src: [
             'generated/*'
           ]
+        }, {
+          expand: true,
+          cwd: '<%= yeoman.app %>',
+          dest: '<%= yeoman.dist %>',
+          src: [
+            'scripts/lib/*'
+          ]
         }]
       },
       styles: {

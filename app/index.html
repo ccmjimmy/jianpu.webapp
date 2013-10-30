@@ -26,6 +26,22 @@
     <![endif]-->
 
     <!-- Add your site or application content here -->
+
+    <div class="navbar navbar-fixed-top">
+      <div class="navbar-inner">
+        <div class="container">
+          <a class="brand" href="#">Muzenplaats</a>
+          <div class="nav-collapse collapse">
+            <ul class="nav" ng-controller="NavbarCtrl">
+              <li ng-class="{ active: isActive('/toyRoom') }"><a href="#/toyRoom">Toy Room</a></li>
+              <li ng-class="{ active: isActive('/studio') }"><a href="#/studio">Studio</a></li>
+              <li ng-class="{ active: isActive('/about') }"><a href="#/about">About</a></li>
+            </ul>
+          </div><!--/.nav-collapse -->
+        </div>
+      </div>
+    </div>
+
     <div class="container" ng-view=""></div>
 
     <!-- Google Analytics: change UA-XXXXX-X to be your site's ID -->
@@ -35,7 +51,7 @@
        m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
        })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
 
-       ga('create', 'UA-XXXXX-X');
+       ga('create', 'UA-36429024-6');
        ga('send', 'pageview');
     </script>
 
@@ -64,10 +80,16 @@
         <script src="bower_components/angular-sanitize/angular-sanitize.js"></script>
         <!-- endbuild -->
 
+        <script src="bower_components/lodash/dist/lodash.js"></script>
+        <script src="bower_components/synths/synths.js"></script>
+        <script src="scripts/lib/n123.js"></script>
+        <script src="scripts/lib/vexflow-min.js"></script>
+
         <!-- build:js({.tmp,app}) scripts/scripts.js -->
         <script src="scripts/app.js"></script>
         <script src="scripts/controllers/main.js"></script>
-        <script src="scripts/controllers\main.js"></script>
+        <script src="scripts/controllers/toy-room.js"></script>
+        <script src="scripts/controllers/studio.js"></script>
         <!-- endbuild -->
 </body>
 </html>
