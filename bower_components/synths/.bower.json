@@ -1,0 +1,34 @@
+{
+  "name": "synths",
+  "main": "synths.js",
+  "homepage": "https://github.com/malcomwu/synths",
+  "authors": [
+    "Malcom Wu <malcomwu@hotmail.com>"
+  ],
+  "description": "Synthesize property with type, methods, operators and more.",
+  "keywords": [
+    "synthesize",
+    "property",
+    "type",
+    "method",
+    "operator"
+  ],
+  "license": "MIT",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "_release": "1a87fb606a",
+  "_resolution": {
+    "type": "branch",
+    "branch": "master",
+    "commit": "1a87fb606a99698cae620f826db0e91f76d915e1"
+  },
+  "_source": "git://github.com/malcomwu/synths.git",
+  "_target": "*",
+  "_originalSource": "synths",
+  "_direct": true
+}

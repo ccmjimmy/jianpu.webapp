@@ -1,0 +1,25 @@
+{
+  "name": "synths",
+  "main": "synths.js",
+  "version": "0.3.0",
+  "homepage": "https://github.com/malcomwu/synths",
+  "authors": [
+    "Malcom Wu <malcomwu@hotmail.com>"
+  ],
+  "description": "Synthesize property with type, methods, operators and more.",
+  "keywords": [
+    "synthesize",
+    "property",
+    "type",
+    "method",
+    "operator"
+  ],
+  "license": "MIT",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ]
+}

@@ -1,0 +1,31 @@
+{
+  "name": "synths",
+  "description": "Synthesize property with type, methods, operators and more.",
+  "version": "0.3.0",
+  "author": "Malcom Wu <malcomwu@hotmail.com>",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/malcomwu/synths"
+  },
+  "main": "./synths.js",
+  "scripts": {
+    "test": "make test"
+  },
+  "dependencies": {
+    "lodash": "~2.2.1"
+  },
+  "devDependencies": {
+    "chai": "~1.7.2",
+    "mocha": "~1.12.0",
+    "backbone": "~1.0.0",
+    "sinon": "~1.7.3"
+  },
+  "keywords": [
+    "synthesize",
+    "property",
+    "type",
+    "method",
+    "operator"
+  ],
+  "license": "MIT"
+}

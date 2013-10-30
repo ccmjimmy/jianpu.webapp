@@ -1,0 +1,994 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>synthesize</title>
+    <link href="http://netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+      header {
+        padding: 30px 80px;
+        color: #0C4026;
+        background-color: #E9FBF2
+      }
+      .container {
+        margin: 20px 60px;
+      }
+      .container > .suite > h1 {
+        color: #285;
+        font-size: 24px;
+        border-bottom: 1px solid #ddd;
+        padding: 5px 0;
+      }
+      dl > .suite > h1 {
+        /*color: #285;*/
+        font-size: 18px;
+      }
+      pre {
+        margin-top: 10px;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>Synthesize</h1>
+      <p>property with getter, setter, constant, default, type, methods, and operators</p>
+
+      <!-- Fork me on Github ribbon
+      =============================== -->
+      <a href="https://github.com/malcomwu/synths">
+        <img style="position: absolute; top: 0; right: 0; border: 0;"
+             src="images/forkme_right_green.png"
+             alt="Fork me on GitHub">
+      </a>
+    </header>
+    <article class="container">
+      <p>This test documentation is produced using the <strong>mocha</strong> testing framework.</p>
+      <p>The development of this project is ongoing. The desired features are not fully implemented yet.</p>
+
+    <section class="suite">
+      <h1>Basic property</h1>
+      <dl>
+        <dt>should be defined by <code>synthesize()</code> or <code>synthesize({})</code></dt>
+        <dd><pre class="prettyprint"><code>person = {};
+expect(person.name = synthesize()).to.be.a('function');
+expect(person.age = synthesize({})).to.be.a('function');</code></pre></dd>
+        <dt>should get the default value: <code>undefined</code></dt>
+        <dd><pre class="prettyprint"><code>expect(person.name()).to.equal(undefined);
+expect(person.age()).to.equal(undefined);</code></pre></dd>
+        <dt>should get the identical value as been set</dt>
+        <dd><pre class="prettyprint"><code>var johnName = { first: 'John', last: 'Smith' };
+
+person.name('John').age(30);
+expect(person.name('John')).to.equal(person);
+expect(person.age(30)).to.equal(person);
+person.name(johnName);
+expect(person.name()).to.equal(johnName);</code></pre></dd>
+        <section class="suite">
+          <h1>Instance variable</h1>
+          <dl>
+            <dt>should be defined by <code>synthesize(_var)</code></dt>
+            <dd><pre class="prettyprint"><code>expect(person.sex = synthesize('_sex')).to.be.a('function');
+expect(person.sex()).to.equal(undefined);
+expect(person._sex).to.equal(undefined);
+person.sex('male');
+
+// The synthesized property and the 'instance variable'.
+expect(person.sex()).to.equal('male');
+expect(person._sex).to.equal('male');</code></pre></dd>
+            <dt>should have varName <code>_var</code> starting with an underscore <code>_</code></dt>
+            <dd><pre class="prettyprint"><code>person.sex = synthesize('_sex');
+expect(function () {
+    person.sex = synthesize('sex');
+}).to.throw(Error);
+expect(function () {
+    person.sex = synthesize('@sex');
+}).to.throw(Error);</code></pre></dd>
+            <dt>should not have varName to be <code>'_[0-9]+'</code></dt>
+            <dd><pre class="prettyprint"><code>expect(function () {
+    synthesize('_1');
+}).to.throw(Error);
+expect(function () {
+    synthesize('_25');
+}).to.throw(Error);</code></pre></dd>
+          </dl>
+        </section>
+        <section class="suite">
+          <h1>Default value</h1>
+          <dl>
+            <dt>should be be defined by <code>synthesize({ default: value })</code></dt>
+            <dd><pre class="prettyprint"><code>defaultParents = { father: 'papa', mother: 'mama' };
+defaultCourses = ['JavaScript', 'Python', 'Ruby'];
+student = {
+    name: synthesize({ default: 'unknown' }),
+    age: synthesize({ default: 15 }),
+    isStudent: synthesize({ default: true }),
+    parents: synthesize({ default: defaultParents }),
+    courses: synthesize({ default: defaultCourses })
+};</code></pre></dd>
+            <dt>should not be a constructed object or inherit object</dt>
+            <dd><pre class="prettyprint"><code>// OK but not recommended, use object literal instead.
+student.birthday = synthesize({ default: new Object() });
+
+// Not OK; default value today is constructed by Date.
+// Use default with type instead.
+expect(function () {
+    var today = new Date('2014-8-22');
+    student.birthday = synthesize({ default: today });
+}).to.throw(Error);
+
+// OK
+student.birthday = synthesize({ default: Object.create(null) });
+// Not OK
+expect(function () {
+    synthesize({ default: Object.create({}) });
+}).to.throw(Error);
+
+// Default value specialCourses inherit defaultCourse
+expect(function () {
+    var specialCourses = Object.create(defaultCourses);
+    student.courses = synthesize({ default: specialCourses });
+}).to.throw(Error);</code></pre></dd>
+            <dt>should be gotten by default correctly</dt>
+            <dd><pre class="prettyprint"><code>expect(student.name()).to.equal('unknown');
+expect(student.age()).to.equal(15);
+expect(student.isStudent()).to.equal(true);</code></pre></dd>
+            <dt>should be overridden by the setter</dt>
+            <dd><pre class="prettyprint"><code>student.name('Joe').age(5).isStudent(false).parents(null).courses(null);
+expect(student.name()).to.equal('Joe');
+expect(student.age()).to.equal(5);
+expect(student.isStudent()).to.equal(false);
+expect(student.parents()).to.equal(null);
+expect(student.courses()).to.equal(null);</code></pre></dd>
+            <dt>should be reset by setting <code>undefined</code> to the property</dt>
+            <dd><pre class="prettyprint"><code>student.name(undefined).age(undefined).isStudent(undefined)
+       .parents(undefined).courses(undefined);
+expect(student.name()).to.equal('unknown');
+expect(student.age()).to.equal(15);
+expect(student.isStudent()).to.equal(true);
+expect(student.parents()).to.eql(defaultParents);
+expect(student.courses()).to.eql(defaultCourses);
+expect(student.parents()).to.not.equal(defaultParents);
+expect(student.courses()).to.not.equal(defaultCourses);</code></pre></dd>
+            <dt>should be gotten as a cloned value for an object or an array</dt>
+            <dd><pre class="prettyprint"><code>expect(student.parents()).to.eql(defaultParents);
+expect(student.courses()).to.eql(defaultCourses);
+expect(student.parents()).to.not.equal(defaultParents);
+expect(student.courses()).to.not.equal(defaultCourses);</code></pre></dd>
+          </dl>
+        </section>
+      </dl>
+    </section>
+    <section class="suite">
+      <h1>Constant property</h1>
+      <dl>
+        <section class="suite">
+          <h1>General</h1>
+          <dl>
+            <dt>should be defined by <code>synthesize({ constant: c })</code></dt>
+            <dd><pre class="prettyprint"><code>synthesize({ constant: 1 });</code></pre></dd>
+            <dt>should not be defined together with any other option</dt>
+            <dd><pre class="prettyprint"><code>expect(function () {
+    synthesize({ constant: 1, type: 'number' });
+}).to.throw(Error);</code></pre></dd>
+            <dt>should have setter triggering <code>typeError</code> and return self</dt>
+            <dd><pre class="prettyprint"><code>var spy = sinon.spy();
+person = {
+    mode: synthesize({ constant: 'super' }),
+    type: synthesize({ constant: undefined }),
+    immortal: synthesize({ constant: false })
+};
+synths.on('typeError', spy);
+expect(person.mode('superb')).to.equal(person);
+expect(spy.calledOnce).is.equal(true);</code></pre></dd>
+            <dt>should have getter always returning the constant</dt>
+            <dd><pre class="prettyprint"><code>expect(person.mode()).to.equal('super');
+expect(person.type()).to.equal(undefined);
+
+// Setting the constant will not change the value.
+person.mode('superb').type('superman').immortal(true);
+expect(person.mode()).to.equal('super');
+expect(person.type()).to.equal(undefined);
+expect(person.immortal()).to.equal(false);</code></pre></dd>
+            <dt>should be the same function for the same constant</dt>
+            <dd><pre class="prettyprint"><code>var a = synthesize({ constant: 5 }),
+    b = synthesize({ constant: 5 });
+expect(a).is.a('function');
+expect(a).to.equal(b);</code></pre></dd>
+          </dl>
+        </section>
+        <section class="suite">
+          <h1>constant undefined</h1>
+          <dl>
+            <dt>should be defined shortly by <code>synthesize(undefined)</code> or <code>synthesize('undefined')</code></dt>
+            <dd><pre class="prettyprint"><code>// It can thought of as a constant undefined or a type 'undefined'
+var person = {
+    mode: synthesize(undefined),
+    type: synthesize('undefined'),
+    age: synthesize({ constant: undefined })
+};
+
+// The above three are just the same property.
+expect(person.mode).is.a('function');
+expect(person.mode).is.equal(person.type);
+expect(person.mode).is.equal(person.age);</code></pre></dd>
+          </dl>
+        </section>
+        <section class="suite">
+          <h1>constant null</h1>
+          <dl>
+            <dt>should be defined shortly by <code>synthesize(null)</code> or <code>synthesize('null')</code></dt>
+            <dd><pre class="prettyprint"><code>// It can thought of as a constant null or a type 'null'
+var person = {
+    mode: synthesize(null),
+    type: synthesize('null'),
+    age: synthesize({ constant: null })
+};
+
+// The above three are just the same property.
+expect(person.mode).is.a('function');
+expect(person.mode).is.equal(person.type);
+expect(person.mode).is.equal(person.age);</code></pre></dd>
+          </dl>
+        </section>
+      </dl>
+    </section>
+    <section class="suite">
+      <h1>Custom property</h1>
+      <dl>
+        <dt>should be defined by <code>synthesize({ get: getter, set: setter })</code></dt>
+        <dd><pre class="prettyprint"><code>john = {
+    firstName: synthesize(),
+    lastName: synthesize(),
+
+    // Synthesize custom property
+    fullName: synthesize({
+        get: function () {
+            return this.firstName() + ' ' + this.lastName();
+        },
+        set: function (name) {
+            var names = name.split(' ');
+            this.firstName(names[0]);
+            this.lastName(names[1]);
+        }
+    })
+};</code></pre></dd>
+        <dt>should work correctly</dt>
+        <dd><pre class="prettyprint"><code>john.firstName('John').lastName('Smith');
+
+// Custom getter
+expect(john.fullName()).to.equal('John Smith');
+
+// Custom setter
+expect(john.fullName('J S')).to.equal(john);
+expect(john.firstName()).to.equal('J');
+expect(john.lastName()).to.equal('S');</code></pre></dd>
+      </dl>
+    </section>
+    <section class="suite">
+      <h1>Read only property</h1>
+      <dl>
+        <dt>should be defined by <code>synthesize({ get: getter })</code> @param <code>{Function} getter</code></dt>
+        <dd><pre class="prettyprint"><code>Person = function () {};
+Person.prototype.firstName = synthesize();
+Person.prototype.lastName = synthesize();
+
+// Synthesize read-only property
+Person.prototype.fullName = synthesize({
+    get: function () {
+        return this.firstName() + ' ' + this.lastName();
+    }
+});
+john = new Person();
+mary = new Person();
+
+expect(function () {
+    synthesize({ get: 1 });
+}).to.throw(TypeError);</code></pre></dd>
+        <dt>should also be defined by <code>synthesize({ get: _var })</code> @param <code>{String} _var</code></dt>
+        <dd><pre class="prettyprint"><code>expect(function () {
+    Person.prototype.mentor = synthesize({ get: '_mentor' });
+}).to.not.throw(Error).and.throw(TypeError);</code></pre></dd>
+        <dt>should have the name <code>_var</code> starting with an underscore <code>_</code></dt>
+        <dd><pre class="prettyprint"><code>expect(function () {
+    Person.father = synthesize({ get: 'pa' });
+}).to.throw(Error);</code></pre></dd>
+        <dt>should get the correct value from the custom getter function</dt>
+        <dd><pre class="prettyprint"><code>john.firstName('John').lastName('Smith');
+expect(john.fullName()).to.equal('John Smith');</code></pre></dd>
+        <dt>should get the correct value from <code>obj[_var]</code></dt>
+        <dd><pre class="prettyprint"><code>expect(john.mentor()).to.equal(undefined);
+john._mentor = mary;
+expect(john.mentor()).to.equal(mary);</code></pre></dd>
+        <dt>should have setter triggering a <code>typeError</code> and returning self <code>this</code></dt>
+        <dd><pre class="prettyprint"><code>var spy = sinon.spy();
+synths.on('typeError', spy);
+expect(john.fullName('Tom')).to.equal(john);
+expect(john.fullName()).to.equal('John Smith');
+john.mentor(john);
+expect(john.mentor()).to.equal(mary);
+expect(spy.calledTwice).is.equal(true);</code></pre></dd>
+      </dl>
+    </section>
+    <section class="suite">
+      <h1>Write only property</h1>
+      <dl>
+        <dt>should be defined by <code>synthesize({ set: setter })</code> @param <code>{Function} setter</code></dt>
+        <dd><pre class="prettyprint"><code>Person = function () {};
+_.extend(Person.prototype, {
+    firstName: synthesize(),
+    lastName: synthesize(),
+
+    // Synthesize write-only property
+    fullName: synthesize({
+        set: function (value) {
+            var names = ('' + value).split(' ');
+            this.firstName(names[0]);
+            this.lastName(names[1]);
+        }
+    })
+});
+john = new Person();
+expect(function () {
+    synthesize({ set: 1 });
+}).to.throw(TypeError);</code></pre></dd>
+        <dt>should also be defined by <code>synthesize({ set: _var })</code> @param <code>{String} _var</code></dt>
+        <dd><pre class="prettyprint"><code>Person.prototype.weight = synthesize({ set: '_www' });</code></pre></dd>
+        <dt>should have the name <code>_var</code> starting with underscore <code>_</code></dt>
+        <dd><pre class="prettyprint"><code>expect(function () {
+    Person.father = synthesize({ set: 'pa' });
+}).to.throw(Error);</code></pre></dd>
+        <dt>should have the custom getter function working correctly</dt>
+        <dd><pre class="prettyprint"><code>john.fullName('John Smith');
+expect(john.firstName()).to.equal('John');
+expect(john.lastName()).to.equal('Smith');</code></pre></dd>
+        <dt>should set the correct value to <code>obj[_var]</code></dt>
+        <dd><pre class="prettyprint"><code>expect(john.weight()).to.equal(undefined);
+john.weight(90);
+expect(john.weight()).to.equal(undefined);
+expect(john._www).to.equal(90);</code></pre></dd>
+        <dt>should have getter triggering a <code>typeError</code> and returning undefined</dt>
+        <dd><pre class="prettyprint"><code>var spy = sinon.spy();
+synths.on('typeError', spy);
+expect(john.fullName()).to.equal(undefined);
+expect(john.weight()).to.equal(undefined);
+expect(spy.calledTwice).is.equal(true);</code></pre></dd>
+      </dl>
+    </section>
+    <section class="suite">
+      <h1>synthesize(options)</h1>
+      <dl>
+        <section class="suite">
+          <h1>options</h1>
+          <dl>
+            <dt>should be nothing, <code>null</code>, <code>undefined</code> or <code>{Object} options</code></dt>
+            <dd><pre class="prettyprint"><code>synthesize();
+synthesize(null);
+synthesize(undefined);
+synthesize({
+    // valid options
+});</code></pre></dd>
+            <dt>should also be a valid <code>{String} typeName</code> or a valid <code>{String} _varName</code></dt>
+            <dd><pre class="prettyprint"><code>synthesize('string');       // a valid type name
+synthesize('_aName');       // a valid instance variable name, starting with '_'</code></pre></dd>
+            <dt>should also be a <code>{Function} constructor</code></dt>
+            <dd><pre class="prettyprint"><code>synthesize(function () {});
+synthesize(Date);
+synthesize(RegExp);</code></pre></dd>
+            <dt>should be forbidden for anything else</dt>
+            <dd><pre class="prettyprint"><code>expect(function () { synthesize(null, null); }).to.throw(Error);
+expect(function () { synthesize([]); }).to.throw(Error);
+expect(function () { synthesize(new Date()); }).to.throw(Error);
+expect(function () { synthesize(true); }).to.throw(Error);
+expect(function () { synthesize(false); }).to.throw(Error);</code></pre></dd>
+          </dl>
+        </section>
+        <section class="suite">
+          <h1>returned value</h1>
+          <dl>
+            <dt>should be a synthesized property, which is a <code>{Function} method</code> for object</dt>
+            <dd><pre class="prettyprint"><code>expect(synthesize()).to.be.a('function');
+expect(synthesize(null)).to.be.a('function');
+expect(synthesize(undefined)).to.be.a('function');
+expect(synthesize({})).to.be.a('function');</code></pre></dd>
+          </dl>
+        </section>
+      </dl>
+    </section>
+    <section class="suite">
+      <h1>Synthesized property</h1>
+      <dl>
+        <section class="suite">
+          <h1>Setter</h1>
+          <dl>
+            <dt>is invoked with a parameter <code>obj.prop(val)</code>, and should return the object itself <code>this</code></dt>
+            <dd><pre class="prettyprint"><code>person = {
+    name: synthesize(),
+    age: synthesize(),
+    type: synthesize(null),
+    mode: synthesize(undefined)
+};
+expect(person.name('John')).to.equal(person);</code></pre></dd>
+            <dt>should therefore be always chainable</dt>
+            <dd><pre class="prettyprint"><code>expect(person.name('Tom').age(25).type('what').mode('ever')).to.equal(person);</code></pre></dd>
+          </dl>
+        </section>
+        <section class="suite">
+          <h1>Getter</h1>
+          <dl>
+            <dt>is invoked without any parameter, <code>obj.prop()</code>, and should return the correct value</dt>
+            <dd><pre class="prettyprint"><code>var person = {
+    name: synthesize(),
+    age: synthesize(),
+    type: synthesize(null),
+    mode: synthesize(undefined)
+};
+person.name('Tom').age(25);
+expect(person.name()).to.equal('Tom');
+expect(person.age()).to.equal(25);
+person.name(undefined).age(null);
+expect(person.name()).to.equal(undefined);
+expect(person.age()).to.equal(null);</code></pre></dd>
+          </dl>
+        </section>
+        <section class="suite">
+          <h1>Type checking</h1>
+          <dl>
+          </dl>
+        </section>
+        <section class="suite">
+          <h1>Error reporting</h1>
+          <dl>
+            <dt>should be by default doing nothing</dt>
+            <dd><pre class="prettyprint"><code>person = { type: synthesize(null) };
+synths.trigger('typeError');
+person.type(1);                         // write to a constant</code></pre></dd>
+            <dt>should work by overriding <code>synths.trigger</code></dt>
+            <dd><pre class="prettyprint"><code>// Throw an error
+synths.trigger = function (name, message) {
+    throw new Error(name + ': ' + message);
+};
+expect(function () { person.type(1); }).to.throw(Error);
+
+// Mixin Backbone.Events
+_.extend(synths, Events);
+
+var spy = sinon.spy();
+synths.on('typeError', spy);
+synths.trigger('typeError');
+person.type(1);                         // write to a constant
+expect(spy.calledTwice).is.equal(true);</code></pre></dd>
+          </dl>
+        </section>
+      </dl>
+    </section>
+    <section class="suite">
+      <h1>Property's property</h1>
+      <dl>
+        <dt>should be invoked by <code>obj.prop('subProp', [value])</code></dt>
+        <dd><pre class="prettyprint"><code>// x and y are both synthesized properties of the from and the to property
+var Vector = function (x, y) { this.x(x); this.y(y); };
+Vector.prototype.x = synthesize();
+Vector.prototype.y = synthesize();
+
+var line = {
+    from: synthesize(),
+    to: synthesize()
+};
+line.from(new Vector(1, 2)).to(new Vector(3, 4));
+
+// Getter with key
+expect(line.from('x')).to.equal(1);
+expect(line.from('y')).to.equal(2);
+expect(line.to('x')).to.equal(3);
+expect(line.to('y')).to.equal(4);
+
+// Setter with key, value; setters are chainable.
+line.from('x', 5).from('y', 6).to('x', 7).to('y', 8);
+
+expect(line.from('x')).to.equal(5);
+expect(line.from('y')).to.equal(6);
+expect(line.to('x')).to.equal(7);
+expect(line.to('y')).to.equal(8);</code></pre></dd>
+      </dl>
+    </section>
+    <section class="suite">
+      <h1>Array property's index and value</h1>
+      <dl>
+        <dt>should be invoked by <code>obj.prop(index, [value])</code></dt>
+        <dd><pre class="prettyprint"><code>var family = {
+    members: synthesize()
+};
+family.members(['John', 'Mary', 'Tom', 'Sue']);
+
+// The original way
+expect(family.members()[0]).to.equal('John');
+family.members()[0] = 'Joey';
+expect(family.members()[0]).to.equal('Joey');
+
+// Getter with index
+expect(family.members(1)).to.equal('Mary');
+
+// Setter with index, value; setters are chainable.
+family.members(1, 'Amy').members(2, 'Tommy');
+
+expect(family.members(1)).to.equal('Amy');
+expect(family.members(2)).to.equal('Tommy');
+expect(family.members()).to.eql(['Joey', 'Amy', 'Tommy', 'Sue']);
+
+// Negative index
+expect(family.members(-1)).to.equal('Sue');
+expect(family.members(-2)).to.equal('Tommy');
+
+// Floating point index
+expect(family.members(-2.8)).to.equal('Tommy');
+expect(family.members('-2.3')).to.equal('Tommy');
+expect(family.members(2.8)).to.equal('Tommy');
+expect(family.members('2.3')).to.equal('Tommy');</code></pre></dd>
+      </dl>
+    </section>
+    <section class="suite">
+      <h1>Object property's key and value</h1>
+      <dl>
+        <dt>should be invoked by <code>obj.prop('key', [value])</code></dt>
+        <dd><pre class="prettyprint"><code>var john = {
+    parents: synthesize()
+};
+john.parents({
+    father: 'Tom',
+    mother: 'Sue',
+});
+expect(john.parents('father')).to.equal('Tom');
+expect(john.parents('mother')).to.equal('Sue');</code></pre></dd>
+      </dl>
+    </section>
+    <section class="suite">
+      <h1>Method of property</h1>
+      <dl>
+        <dt>should be invoked by <code>obj.prop('#method')</code></dt>
+        <dd><pre class="prettyprint"><code>john = {
+    weight: synthesize(),
+    birthday: synthesize(),
+    courses: synthesize()
+};
+john.weight(50).birthday(new Date('2010-6-6'))
+    .courses(['JavaScript']);
+
+expect(john.weight()).to.equal(50);
+
+// Method of Number
+expect(john.weight('#toString')).to.equal('50');
+// Alias name of the the method
+expect(john.weight('#to string')).to.equal('50');
+expect(john.weight('#to-string')).to.equal('50');
+expect(john.weight('#to_string')).to.equal('50');
+
+// Methods of Date
+expect(john.birthday('#getFullYear')).to.equal(2010);
+expect(john.birthday('#get full year')).to.equal(2010);
+expect(john.birthday('#getMonth')).to.equal(5);
+expect(john.birthday('#getDate')).to.equal(6);
+john.birthday('#setDate', 7);
+expect(john.birthday('#getDate')).to.equal(7);
+
+// Methods of Array
+john.courses('#push', 'Ruby');
+expect(john.courses()).to.eql(['JavaScript', 'Ruby']);</code></pre></dd>
+        <dt>should be assignment with an <code>=</code> suffix</dt>
+        <dd><pre class="prettyprint"><code>// Method with an assignment operator
+john.courses('#concat=', ['Python', 'Java']);
+expect(john.courses()).to.eql(['JavaScript', 'Ruby', 'Python', 'Java']);
+
+// Methods of lodash
+john.courses('#filter=', function (course) {
+    return course.charAt(0) === 'J';
+}).courses('#reject=', function (course) {
+    return course.length === 4;
+});
+expect(john.courses()).to.eql(['JavaScript']);
+
+// Escape the '#'
+expect(john.birthday('##').courses('##text')).to.equal(john);
+expect(john.birthday()).to.equal('#');
+expect(john.courses()).to.equal('#text');</code></pre></dd>
+      </dl>
+    </section>
+    <section class="suite">
+      <h1>Operator of property</h1>
+      <dl>
+        <dt>should have binary operator shortcut</dt>
+        <dd><pre class="prettyprint"><code>var john = {
+    name: synthesize(),
+    age: synthesize()
+};
+john.name('Jo').age(10);
+
+john.name('+=', 'hn').age('+=', 5);
+expect(john.name()).to.equal('John');
+
+john.name('r+=', '. ', 'Mr').name('+=', ' ', 'Smi', 'th');
+expect(john.name()).to.equal('Mr. John Smith');
+
+john.age('-=', 5, 5).age('**=', 2);
+expect(john.age()).to.equal(25);</code></pre></dd>
+        <dt>should be overloaded by custom operator</dt>
+        <dd><pre class="prettyprint"><code>// x and y are both synthesized properties of the from and the to property
+var Vector = function (x, y) { this.x(x); this.y(y); };
+
+// Static method
+Vector['-'] = function (v1, v2) {
+    return new Vector(v1.x() - v2.x(), v1.y() - v2.y());
+};
+_.extend(Vector.prototype, {
+    x: synthesize(),
+    y: synthesize(),
+
+    // Dynamic method
+    '+': function (v) {
+        return new Vector(this.x() + v.x(), this.y() + v.y());
+    },
+});
+
+var v1 = new Vector(5, 10),
+    v2 = new Vector(15, 20),
+    v3;
+
+// Dynamic method
+v3 = v1['+'](v2);
+expect(v3.x()).to.equal(20);
+expect(v3.y()).to.equal(30);
+
+// Static method
+v3 = Vector['-'](v1, v2);
+expect(v3.x()).to.equal(-10);
+expect(v3.y()).to.equal(-10);
+
+var line = {
+    from: synthesize(),
+    to: synthesize(Vector)  // type needed for the static method
+};
+line.from(new Vector(1, 2)).to('#new', 3, 4);
+
+// Property's operator is overloaded.
+// Dynamic method
+v3 = line.from('+', v1);
+expect(v3.x()).to.equal(6);
+expect(v3.y()).to.equal(12);
+
+// Static method
+v3 = line.to('-', v1);
+expect(v3.x()).to.equal(-2);
+expect(v3.y()).to.equal(-6);
+
+// Assignment operator
+line.from('+=', v1, v2).to('-=', v1, v2);
+expect(line.from('x')).to.equal(21);
+expect(line.from('y')).to.equal(32);
+expect(line.to('x')).to.equal(-17);
+expect(line.to('y')).to.equal(-26);</code></pre></dd>
+      </dl>
+    </section>
+    <section class="suite">
+      <h1>Nested property, method and operator</h1>
+      <dl>
+        <dt>should be invoked by such as <code>obj.prop(subprop, key, index, ...)</code></dt>
+        <dd><pre class="prettyprint"><code>var john = {
+    relatives: synthesize()
+};
+
+// Normal setter
+john.relatives({
+    sisters: [
+        {
+            name: 'Mary',
+            age: synthesize()
+        },
+        {
+            name: 'Jane',
+            birthday: synthesize()
+        }
+    ],
+    children: synthesize(),
+});
+
+// Object (key, value) setter
+john.relatives('children', {
+    girl: 'Amy',
+    boy: 'Tommy'
+});
+
+// Nested getters
+expect(john.relatives('sisters', 0, 'name')).to.equal('Mary');
+expect(john.relatives('sisters', 1, 'name')).to.equal('Jane');
+expect(john.relatives('children', 'girl')).to.equal('Amy');
+expect(john.relatives('children', 'boy')).to.equal('Tommy');
+
+// Nested setters
+john.relatives('sisters', 0, 'name', 'M').relatives('sisters', 1, 'name', 'J')
+    .relatives('children', 'girl', 'A').relatives('children', 'boy', 'T')
+    .relatives('sisters', 0, 'age', 15)
+    .relatives('sisters', 1, 'birthday', new Date('2013-8-25'));
+
+// Nested getters
+expect(john.relatives('sisters', 0, 'name')).to.equal('M');
+expect(john.relatives('sisters', 1, 'name')).to.equal('J');
+expect(john.relatives('sisters', 0, 'age')).to.equal(15);
+expect(john.relatives('children', 'girl')).to.equal('A');
+expect(john.relatives('children', 'boy')).to.equal('T');
+
+// Nested getters and methods
+expect(john.relatives('sisters', 0, 'age', '#toString')).to.equal('15');
+expect(john.relatives('sisters', 1, 'birthday', '#getDate')).to.equal(25);
+expect(john.relatives('sisters', 0, 'age', '#to string')).to.equal('15');
+expect(john.relatives('sisters', 1, 'birthday', '#get date')).to.equal(25);
+
+john.courses = synthesize();
+john.courses([{
+    name: 'JS',
+    book: synthesize(),
+    credit: synthesize()
+}]);
+john.courses(0, 'book', 'JavaScript');
+expect(john.courses(0, 'book')).to.equal('JavaScript');
+john.courses(0, 'book', 'r+=', 'Eloquent ');
+expect(john.courses(0, 'book')).to.equal('Eloquent JavaScript');
+expect(john.courses(0, 'name')).to.equal('JS');
+john.courses(0, 'credit', 3);
+expect(john.courses(0, 'credit')).to.equal(3);
+expect(john.courses(0, 'credit', '#to string')).to.equal('3');
+john.courses(0, 'credit', '+=', 2);
+expect(john.courses(0, 'credit')).to.equal(5);
+
+john.wife = synthesize();
+var mary = { husband: synthesize() };
+john.wife(mary).wife('husband', john);
+expect(mary.husband()).to.equal(john);
+expect(mary.husband('wife', 'husband', 'courses', 0, 'name')).to.equal('JS');
+expect(mary.husband('wife', 'husband', 'courses', 0, 'credit')).to.equal(5);
+mary.husband('wife', 'husband', 'wife', 'husband', 'courses', 0, 'credit', '+=', 1);
+expect(mary.husband('courses', 0, 'credit')).to.equal(6);</code></pre></dd>
+      </dl>
+    </section>
+    <section class="suite">
+      <h1>synthesize('toJSON')</h1>
+      <dl>
+        <section class="suite">
+          <h1>Basic mode</h1>
+          <dl>
+            <dt>should be defined by <code>synthesize('toJSON')</code></dt>
+            <dd><pre class="prettyprint"><code>Person = function (n) { this.fullName(n); };
+_.extend(Person.prototype, {
+    firstName: synthesize(),                        // basic property is readable
+    lastName: synthesize(),                         // readable
+    fullName: synthesize({                          // write only
+        set: function (value) {
+            var names = ('' + value).split(' ');
+            this.firstName(names[0]);
+            this.lastName(names[1]);
+        }
+    }),
+    weight: synthesize({ set: '_www' }),            // write only
+    type: synthesize({ constant: 1 }),              // constant is readable
+    isHappy: synthesize({                           // read only
+        get: function () {
+            return this._www &lt; 85 &amp;&amp; this._www &gt; 75;
+        }
+    }),
+    wife: synthesize({ get: '_wife' }),             // Read only
+
+    // Synthesize a toJSON method, which is not a synthesized property.
+    toJSON: synthesize('toJSON')
+});
+
+john = new Person('John Smith');
+john.weight(80);
+john._wife = 'Mary';    // write to a read-only internally
+expect(Person.prototype.toJSON).to.be.a('function');</code></pre></dd>
+            <dt>should convert all readable synthesized properties to typical properties</dt>
+            <dd><pre class="prettyprint"><code>var result = {
+    firstName: 'John',
+    lastName: 'Smith',
+    type: 1,
+    isHappy: true,
+    wife: 'Mary'
+};
+expect(john.toJSON()).to.eql(result);</code></pre></dd>
+          </dl>
+        </section>
+        <section class="suite">
+          <h1>Key inclusive mode</h1>
+          <dl>
+            <dt>should be defined by <code>synthesize('toJSON', key1, key2, ...)</code></dt>
+            <dd><pre class="prettyprint"><code>Person.prototype.toJSON = synthesize('toJSON', 'firstName', 'wife');
+expect(Person.prototype.toJSON).to.be.a('function');</code></pre></dd>
+            <dt>should get only included properties</dt>
+            <dd><pre class="prettyprint"><code>var result = {
+    firstName: 'John',
+    wife: 'Mary'
+};
+expect(john.toJSON()).to.eql(result);</code></pre></dd>
+            <dt>should trigger an error if that key is not a synthesized property</dt>
+            <dd><pre class="prettyprint"><code>var spy = sinon.spy();
+synths.on('error', spy);
+john.toJSON();
+expect(spy.called).to.equal(false);
+
+Person.prototype.toJSON = synthesize('toJSON', 'firstName', 'wifi', 'haha');
+expect(john.toJSON()).to.eql({ firstName: 'John' });
+expect(spy.calledTwice).to.equal(true);</code></pre></dd>
+          </dl>
+        </section>
+        <section class="suite">
+          <h1>Key map mode</h1>
+          <dl>
+            <dt>should be defined by <code>synthesize('toJSON', { key1: prop1, key2: prop2, ... })</code></dt>
+            <dd><pre class="prettyprint"><code>Person.prototype.toJSON = synthesize('toJSON', {
+    name: 'firstName',
+    love: 'wife'
+});
+expect(Person.prototype.toJSON).to.be.a('function');</code></pre></dd>
+            <dt>should get the mapped properties</dt>
+            <dd><pre class="prettyprint"><code>var result = {
+    name: 'John',
+    love: 'Mary'
+};
+expect(john.toJSON()).to.eql(result);</code></pre></dd>
+            <dt>should trigger an error if that property is not a synthesized property</dt>
+            <dd><pre class="prettyprint"><code>var spy = sinon.spy();
+synths.on('error', spy);
+john.toJSON();
+expect(spy.called).to.equal(false);
+
+Person.prototype.toJSON = synthesize('toJSON', {
+    name: 'firstName',
+    love: 'wifi',           // wifi is not in the prototype chain
+    firstName: 'name'       // name is not in the prototype chain
+});
+expect(john.toJSON()).to.eql({ name: 'John' });
+expect(spy.calledTwice).to.equal(true);</code></pre></dd>
+          </dl>
+        </section>
+        <section class="suite">
+          <h1>Key exclusive mode</h1>
+          <dl>
+            <dt>should be defined by <code>synthesize('toJSON', '-', key1, key2, ...)</code></dt>
+            <dd><pre class="prettyprint"><code>Person.prototype.toJSON = synthesize('toJSON', '-', 'firstName', 'wife');
+expect(Person.prototype.toJSON).to.be.a('function');</code></pre></dd>
+            <dt>should get all readable properties other than excluded</dt>
+            <dd><pre class="prettyprint"><code>var result = {
+    lastName: 'Smith',
+    type: 1,
+    isHappy: true
+};
+expect(john.toJSON()).to.eql(result);</code></pre></dd>
+          </dl>
+        </section>
+      </dl>
+    </section>
+    <section class="suite">
+      <h1>Constructor type</h1>
+      <dl>
+        <dt>should be defined by <code>synthesize(Constructor)</code></dt>
+        <dd><pre class="prettyprint"><code>Vector = function (x, y) {
+    this.x(x);
+    this.y(y);
+};
+Vector.prototype.x = synthesize();
+Vector.prototype.y = synthesize();
+
+line = {
+    from: synthesize(Vector),
+    to: synthesize(Vector)
+};
+birth = { date: synthesize(Date) };</code></pre></dd>
+        <dt>should have setter working as normal</dt>
+        <dd><pre class="prettyprint"><code>var v1 = new Vector(1, 2),
+    v2 = new Vector(3, 4);
+line.from(v1).to(v2);
+expect(line.from()).to.equal(v1);
+expect(line.to()).to.equal(v2);</code></pre></dd>
+        <dt>should have <code>new</code> method to invoke the constructor</dt>
+        <dd><pre class="prettyprint"><code>line.from('#new', 5, 6).to('#new', 7, 8);
+birth.date('#new', 2013, 7, 17);</code></pre></dd>
+        <dt>should have getter getting a correct type and value</dt>
+        <dd><pre class="prettyprint"><code>// Type is referred to as an instance of the given constructor.
+expect(line.from()).to.be.an.instanceof(Vector);
+expect(line.to()).to.be.an.instanceof(Vector);
+expect(birth.date()).to.be.an.instanceof(Date);
+expect(birth.date()).to.be.an.instanceof(Object);
+
+expect(line.from().x()).to.equal(5);
+expect(line.from().y()).to.equal(6);
+expect(line.to().x()).to.equal(7);
+expect(line.to().y()).to.equal(8);
+expect(birth.date().getFullYear()).to.equal(2013);
+expect(birth.date().getMonth()).to.equal(7);
+expect(birth.date().getDate()).to.equal(17);
+expect(birth.date().getDay()).to.equal(6);
+birth.date('#new', '2010-6-6');
+expect(birth.date()).to.be.an.instanceof(Date);
+expect(birth.date().getFullYear()).to.equal(2010);
+expect(birth.date().getMonth()).to.equal(5);
+expect(birth.date().getDate()).to.equal(6);</code></pre></dd>
+      </dl>
+    </section>
+    <section class="suite">
+      <h1>Name type</h1>
+      <dl>
+        <dt>should be defined by a valid type name: <code>synthesize('typeName')</code></dt>
+        <dd><pre class="prettyprint"><code>person = {
+    name: synthesize('string'),
+    age: synthesize('integer'),
+    weight: synthesize('number'),
+    isStudent: synthesize('boolean'),
+    parents: synthesize('object'),
+    options: synthesize('plainObject'),
+    courses: synthesize('array')
+};
+expect(function () {
+    synthesize('unknownType');
+}).to.throw(Error);</code></pre></dd>
+        <dt>should have primitive types</dt>
+        <dd><pre class="prettyprint"><code>person.name(5).age('20.9').weight('30.5').isStudent('abc');
+expect(person.name()).to.equal('5');
+expect(person.age()).to.equal(20);
+expect(person.age('#to string')).to.equal('20');
+expect(person.weight()).to.equal(30.5);
+expect(person.isStudent()).to.equal(true);
+person.isStudent(0);
+expect(person.isStudent()).to.equal(false);
+expect(person.isStudent('#to string')).to.equal('false');</code></pre></dd>
+        <dt>should have plain object type</dt>
+        <dd><pre class="prettyprint"><code>synthesize('plainObject');
+synthesize('plain object');</code></pre></dd>
+        <dt>should have array type</dt>
+        <dd><pre class="prettyprint"><code>person.courses(['JS', 'PHP', 'JSP']);
+expect(person.courses()).to.eql(['JS', 'PHP', 'JSP']);
+
+// Array index and value
+expect(person.courses(0)).to.equal('JS');
+person.courses(0, 'JavaScript');
+expect(person.courses()).to.eql(['JavaScript', 'PHP', 'JSP']);
+
+// Lodash method
+expect(person.courses('#filter', function (c) {
+    return c.charAt(0) === 'J';
+})).to.eql(['JavaScript', 'JSP']);
+
+// Constructor
+person.courses('#new', 'JS', 'C++', 'C#');
+expect(person.courses()).to.eql(['JS', 'C++', 'C#']);
+person.courses('#new', 123);
+expect(person.courses()).to.eql([123]);
+
+// Construct from object to array
+person.courses({ a: 'JS', b: 'COFFEE' });
+expect(person.courses()).to.eql(['JS', 'COFFEE']);
+
+// Construct from string to array
+person.courses('#new', 'abcde');
+expect(person.courses()).to.eql(['a', 'b', 'c', 'd', 'e']);
+
+// Array method
+person.courses('#slice=', 1, -1);
+expect(person.courses()).to.eql(['b', 'c', 'd']);</code></pre></dd>
+        <dt>should have date type</dt>
+        <dd><pre class="prettyprint"><code>var person = { birthday: synthesize('date') };
+person.birthday('#new', '2011-1-2');
+expect(person.birthday('date')).to.equal(2);
+expect(person.birthday('month')).to.equal(1);
+person.birthday('month', 3);
+expect(person.birthday('month')).to.equal(3);</code></pre></dd>
+      </dl>
+    </section>
+    </article>
+    <script src="https://google-code-prettify.googlecode.com/svn/loader/run_prettify.js"></script>
+    <script>
+      (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+      (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+      m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+      })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+      ga('create', 'UA-36429024-5', 'malcomwu.github.io');
+      ga('send', 'pageview');
+    </script>
+  </body>
+</html>
