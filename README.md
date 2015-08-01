@@ -8,4 +8,4 @@
 
 This project is in the initial state, please go to the wiki for further information.
 
-https://github.com/malcomwu/jp.webapp/wiki
+https://github.com/malcomwu/jianpu.webapp/wiki
